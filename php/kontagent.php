@@ -70,7 +70,9 @@ class Kontagent
     
     public function gen_short_tracking_code()
     {
-        return substr(uniqid(rand()), -32);
+        global $kt_short_tag;
+        $kt_short_tag = substr(uniqid(rand()), -32);
+        return $kt_short_tag;
     }
 
     public function get_current_url()
