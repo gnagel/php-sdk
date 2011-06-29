@@ -14,7 +14,7 @@ class Kontagent
     private $m_send_msg_from_js;
     private $m_kt_host;
     private $m_kt_comm_layer;
-    
+
     private function add_subtype123(&$params,
                                     $st1=null, $st2=null, $st3=null)
     {
@@ -41,19 +41,19 @@ class Kontagent
             $r = 1;
         }else{
             $r = 0;
-        }        
+        }
         return $r;
     }
 
     private function append_to_js_msg_queue($msg){
         echo "<script>kt_message_queue.push('".$msg."');</script>";
     }
-    
+
     public function get_send_msg_from_js()
     {
         return $this->m_send_msg_from_js;
     }
-    
+
     public function gen_kt_handled_installed_cookie_key($fb_id, $uid)
     {
         return 'kt_handled_installed_'.$fb_id."_".$uid;
@@ -62,12 +62,12 @@ class Kontagent
     {
         return 'kt_capture_user_info_'.$fb_id."_".$uid;
     }
-    
+
     public function gen_long_tracking_code()
     {
         return substr(uniqid(rand()), -32);
     }
-    
+
     public function gen_short_tracking_code()
     {
         global $kt_short_tag;
@@ -101,18 +101,18 @@ class Kontagent
         foreach($parsed_GET as $arg => $val)
         {
             if(preg_match('/kt_*/',  $arg))
-                if($arg != 'kt_ut') 
+                if($arg != 'kt_ut')
                     continue;
             $params[$arg] = $val;
         }
-        
+
         // kt_short_tag is set in gen_short_tracking_code().
         global $kt_short_tag;
-        
+
         if(isset($kt_short_tag)){
             $params['kt_sut'] = $kt_short_tag;
         }
-        
+
         $r_url = $parsed_url_arry['scheme']."://".$parsed_url_arry['host'];
         if( isset($parsed_url_arry['port']) )
         {
@@ -120,24 +120,24 @@ class Kontagent
             $r_url .= $parsed_url_arry['port'];
         }
         $r_url .= $parsed_url_arry['path'];
-        
+
         if( sizeof($params) )
         {
             $r_url.='?'.http_build_query($params);
         }
-        return $r_url; 
+        return $r_url;
     }
-    
+
    //test this?
     public function append_kt_query_str($original_url, $query_str)
     {
         $position = strpos($original_url, '?');
-        
+
         /* There are no query params, just append the new one */
         if ($position === false) {
             return $original_url.'?'.$query_str;
         }
-        
+
         /* Prefix the params with the reference parameter */
         $noParams                   = substr($original_url, 0, $position + 1);
         $params                     = substr($original_url, $position + 1);
@@ -155,8 +155,9 @@ class Kontagent
         }else{
             $this->m_kt_port = '80';
         }
-        
+
         $this->m_kt_comm_layer = new KtCommLayer($this->m_kt_host, $this->m_kt_port, $this->m_kt_api_key);
+        $this->m_spruce_comm_layer = new KtCommLayer(SPRUCE_TRACKING_SERVER, 80, 0);
     }
 
     public function gen_tracking_pageview_link($uid)
@@ -216,7 +217,7 @@ class Kontagent
     }
 
 
-    public function gen_invite_content_link($content_link, $long_tracking_code, 
+    public function gen_invite_content_link($content_link, $long_tracking_code,
                                             $st1=null, $st2=null, $st3=null)
     {
         $params = array();
@@ -227,7 +228,7 @@ class Kontagent
                                               http_build_query($params, '', '&'));
         return $mod_url;
     }
-    
+
     public function gen_tracking_install_url($uid)
     {
         $params = array('s' => $uid);
@@ -251,7 +252,7 @@ class Kontagent
         $this->m_kt_comm_layer->api_call_method($tracking_url);
     }
 
-    
+
     public function gen_tracking_uninstall_url($uid)
     {
         $params = array('s' => $uid);
@@ -262,7 +263,7 @@ class Kontagent
         $tracking_url = $this->gen_tracking_uninstall_url($uid);
         $this->m_kt_comm_layer->api_call_method($tracking_url);
     }
-    
+
     //
     // When fb forwards back the control back to the callback url after
     // invite sent, fb_sig_user is no where to be found. That's why we need
@@ -370,7 +371,7 @@ class Kontagent
         $tracking_url = $this->gen_tracking_ucc_click_url($recipient_uid, $short_tag);
         $this->m_kt_comm_layer->api_call_method($tracking_url);
     }
-    
+
 
     public function gen_tracking_revenue_url($uid, $amount_in_cents,
                                              $revenue_type=null, $st1=null, $st2=null, $st3=null)
@@ -431,7 +432,7 @@ class Kontagent
         $this->track_revenue_impl($uid, $amount_in_cents, "other",
                                   $st1, $st2, $st3);
     }
-    
+
     public function gen_tracking_event_url($uid, $event_name, $value=null, $level=null,
                                            $st1=null, $st2=null, $st3=null)
     {
@@ -441,7 +442,7 @@ class Kontagent
         if(isset($level)) $params['l'] = $level;
         if(isset($st1)) $params['st1'] = $st1;
         if(isset($st2)) $params['st2'] = $st2;
-        if(isset($st3)) $params['st3'] = $st3;   
+        if(isset($st3)) $params['st3'] = $st3;
         return $this->m_kt_comm_layer->gen_tracking_url('v1', 'evt', $params);
     }
     public function track_event($uid, $event_name, $value=null, $level=null,
@@ -475,11 +476,27 @@ class Kontagent
     }
     //
     // $uid : uid integer or an array of uids.
-    // 
+    //
     public function track_multiple_goal_counts($uid, $goal_counts)
     {
         $tracking_url = $this->gen_tracking_goal_count($uid, $goal_counts);
         $this->m_kt_comm_layer->api_call_method($tracking_url);
     }
-    
+
+
+    // Additional tracking for Ad Partners
+    public function gen_spruce_ads_tracking_url()
+    {
+        $params = array('spruce_adid' => $_GET['spruce_adid'],
+                        'spruce_sid'  => $_GET['spruce_sid'],
+                       );
+        $url = 'http://'. SPRUCE_TRACKING_SERVER. "/pixel.ssps?".http_build_query($params,'','&');
+        return $url;
+    }
+
+    public function track_spruce_ads()
+    {
+        $tracking_url = $this->gen_spruce_ads_tracking_url();
+        $this->m_spruce_comm_layer->api_call_method($tracking_url);
+    }
 }

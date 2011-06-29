@@ -8,7 +8,7 @@
   // Assumption: Whereever kt_landing.php is included,
   // facebook.php and kontagent.php have already
   // been included prior to the loading of this file.
-  // 
+  //
 
 $facebook = new KtFacebook(array('appId'  => FB_ID,
                                  'secret' => FB_SECRET,
@@ -84,7 +84,7 @@ if($uid){
             // trip to facebook to get the fb cookies
             if( $session ){
                 if( !headers_sent() ) {
-                    setcookie( $browser_install_cookie_key, 'done' ); 
+                    setcookie( $browser_install_cookie_key, 'done' );
                 }
             }
         }
@@ -96,7 +96,7 @@ if($uid){
         if(isset($_GET['installed']) && !isset($_GET['request_ids'])){
             $kt->track_install($uid);
         }
-        
+
         //
         //Acquire User Info
         //
@@ -132,10 +132,10 @@ if(isset($_GET['kt_type']))
                 "';</script>";
         }
 
-        
+
         // If your user gets forwarded outside of facebook,
         // call $facebook->redirect([canvas url]) to forward your
-        // user back. 
+        // user back.
         // $facebook->redirect(FB_CANVAS_URL);
         break;
     }
@@ -168,20 +168,36 @@ if(isset($_GET['kt_type']))
         }
         break;
     }
-    case 'ad':
-    case 'partner':
+    default:
     {
-        $short_tag = $kt->gen_short_tracking_code();
-        if(!$kt->get_send_msg_from_js()){
-            $kt->track_ucc_click($uid, $short_tag);
+        // track_ucc_click for ads
+        if (preg_match("/ad$|partner$|ad_buy(\..+)?$/", $_GET['kt_type'], $matches)){
+            $short_tag = $kt->gen_short_tracking_code();
+            if(!$kt->get_send_msg_from_js()){
+                echo "track_ucc_click - ". $uid. ",". $short_tag;
+                $kt->track_ucc_click($uid, $short_tag);
+            }
+            else{
+                echo "<script>var kt_landing_str='".
+                    $kt->gen_tracking_ucc_click_url($uid, $short_tag).
+                    "';</script>";
+            }
         }
-        else{
-            echo "<script>var kt_landing_str='".
-                $kt->gen_tracking_ucc_click_url($uid, $short_tag).
-                "';</script>";
+        // Spruce Media Ad Tracking
+        if ($_GET['kt_type'] == 'ad_buy.spruce') {
+            if (isset($_GET['spruce_adid']) && isset($_GET['spruce_sid'])) {
+                if(!$kt->get_send_msg_from_js()){
+                    echo "track_spruce_ads - ". $_GET['spruce_adid']. ", ". $_GET['spruce_sid'];
+                    $kt->track_spruce_ads();
+                }else{
+                    echo "<script>var kt_landing_str='".
+                        $kt->gen_spruce_ads_tracking_url().
+                        "';</script>";
+                }
+            }
         }
         break;
     }
-    
+
     }// switch
 }
