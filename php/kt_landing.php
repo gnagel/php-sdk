@@ -186,14 +186,7 @@ if(isset($_GET['kt_type']))
         // Spruce Media Ad Tracking
         if ($_GET['kt_type'] == 'ad_buy.spruce') {
             if (isset($_GET['spruce_adid']) && isset($_GET['spruce_sid'])) {
-                if(!$kt->get_send_msg_from_js()){
-                    echo "track_spruce_ads - ". $_GET['spruce_adid']. ", ". $_GET['spruce_sid'];
-                    $kt->track_spruce_ads();
-                }else{
-                    echo "<script>var kt_landing_str='".
-                        $kt->gen_spruce_ads_tracking_url().
-                        "';</script>";
-                }
+                $kt->track_spruce_ads();
             }
         }
         break;

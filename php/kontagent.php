@@ -490,13 +490,17 @@ class Kontagent
         $params = array('spruce_adid' => $_GET['spruce_adid'],
                         'spruce_sid'  => $_GET['spruce_sid'],
                        );
-        $url = 'http://'. SPRUCE_TRACKING_SERVER. "/pixel.ssps?".http_build_query($params,'','&');
+        $url = 'http://'. SPRUCE_TRACKING_SERVER. "/100164/pixel.ssps?".http_build_query($params,'','&');
         return $url;
     }
 
     public function track_spruce_ads()
     {
         $tracking_url = $this->gen_spruce_ads_tracking_url();
-        $this->m_spruce_comm_layer->api_call_method($tracking_url);
+        if($this->m_send_msg_from_js){
+            $this->append_to_js_msg_queue($tracking_url);
+        }else{
+            $this->m_kt_comm_layer->api_call_method($tracking_url);
+        }
     }
 }
